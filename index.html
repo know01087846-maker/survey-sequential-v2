@@ -533,6 +533,7 @@
             }
 
             currentSurveyData.pretest = newPretest;
+            currentSurveyData.posttest = [];
 
             const existingIndex = allSurveyData.findIndex(d =>
                 d.school === currentSurveyData.school && d.class === currentSurveyData.class
@@ -548,6 +549,7 @@
             showStatus('preStatus', `✅ [${currentSurveyData.school} ${currentSurveyData.class}] 사전검사 저장됨! (${currentSurveyData.pretest.length}명)`, 'success');
 
             document.getElementById('postBtn').disabled = false;
+            createPostTable();
             setTimeout(() => switchTab('posttest'), 800);
         }
 
