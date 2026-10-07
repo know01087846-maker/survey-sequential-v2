@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>청소년 생명존중 교육 설문 - 학교별 관리</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1f77b4 0%, #1f77b4 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+            width: 33%;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #1f77b4;
+            border-bottom-color: #1f77b4;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #1f77b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #1a5fa0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(31, 119, 180, 0.3);
+        }
+
+        .btn-success {
+            background: #4CAF50;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1f77b4;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: bold;
+            color: #333;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .school-badge {
+            display: inline-block;
+            background: #1f77b4;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .divider {
+            margin: 30px 0;
+            border-top: 2px solid #eee;
+        }
+
+        input[type="number"] {
+            width: 50px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 청소년 생명존중 교육</h1>
+            <p>사전검사 → 교육 → 사후검사 → 효과 분석</p>
+            <p id="schoolInfo" style="font-size: 1em; margin-top: 10px; opacity: 0.95;"></p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('pretest')">📝 사전검사 입력</button>
+                <button class="tab-btn" id="postBtn" disabled onclick="switchTab('posttest')">📝 사후검사 입력</button>
+                <button class="tab-btn" id="resultBtn" disabled onclick="switchTab('results')">📊 분석 결과</button>
+                <button class="tab-btn" id="graphBtn" disabled onclick="switchTab('graphs')">📈 그래프</button>
+                <button class="tab-btn" onclick="switchTab('import')">📥 데이터 병합</button>
+                <button class="tab-btn" onclick="switchTab('saveddata')">📋 저장된 데이터</button>
+                <button class="tab-btn" onclick="switchTab('download')">💾 다운로드</button>
+            </div>
+
+            <!-- 사전검사 입력 탭 -->
+            <div id="pretest" class="tab-content active">
+                <div class="section">
+                    <div class="section-title">1️⃣ 학교 및 학급 정보</div>
+                    <div class="controls">
+                        <label>
+                            학교명:
+                            <input type="text" id="schoolName" placeholder="학교명 입력" style="width: 150px;">
+                        </label>
+                        <label>
+                            학급:
+                            <select id="classSelect">
+                                <option value="">-- 선택하세요 --</option>
+                                <option value="1반">1반</option>
+                                <option value="2반">2반</option>
+                                <option value="3반">3반</option>
+                                <option value="4반">4반</option>
+                                <option value="5반">5반</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </label>
+                        <label>
+                            학생 수:
+                            <input type="number" id="studentCount" min="1" max="50" value="1">
+                        </label>
+                        <button class="btn" onclick="createPreTable()">테이블 생성</button>
+                        <button class="btn" onclick="resetPretestInfo()" style="background: #9c27b0;">🔄 정보 초기화</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">2️⃣ 사전검사 점수 입력</div>
+                    <div class="info-box">
+                        💡 각 문항을 1~5점으로 평가해주세요 (1:전혀, 3:보통, 5:매우)
+                    </div>
+                    <div id="preTableContainer"></div>
+                    <div id="preStatus" class="status"></div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn" onclick="validatePretestData()" style="background: #2196F3;">✓ 데이터 검증</button>
+                        <button class="btn btn-success" onclick="savePretestData()">사전검사 저장</button>
+                        <button class="btn" onclick="clearPretestTable()" style="background: #ff9800;">🧹 입력 초기화</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 사후검사 입력 탭 -->
+            <div id="posttest" class="tab-content">
+                <div class="section">
+                    <div class="section-title">3️⃣ 사후검사 점수 입력</div>
+                    <div class="info-box">
+                        ✅ 사전검사가 저장되었습니다. 이제 사후검사 점수를 입력해주세요.
+                    </div>
+                    <div id="postTableContainer"></div>
+                    <div id="postStatus" class="status"></div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn" onclick="validatePosttestData()" style="background: #2196F3;">✓ 데이터 검증</button>
+                        <button class="btn btn-success" onclick="savePosttestData()">사후검사 저장 & 분석</button>
+                        <button class="btn" onclick="clearPosttestTable()" style="background: #ff9800;">🧹 입력 초기화</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 분석 결과 탭 -->
+            <div id="results" class="tab-content">
+                <div class="section">
+                    <div class="section-title">📊 통계 분석 결과</div>
+                    <div id="resultsContainer"></div>
+                </div>
+            </div>
+
+            <!-- 그래프 탭 -->
+            <div id="graphs" class="tab-content">
+                <div class="section">
+                    <div class="section-title">📈 시각화 분석</div>
+                    <canvas id="comparisonChart" style="max-height: 400px; margin: 20px 0;"></canvas>
+                    <canvas id="changeChart" style="max-height: 400px; margin: 20px 0;"></canvas>
+                </div>
+            </div>
+
+            <!-- 데이터 병합 탭 -->
+            <div id="import" class="tab-content">
+                <div class="section">
+                    <div class="section-title">📥 이전 CSV 결과 병합</div>
+                    <div class="info-box">
+                        💡 이전에 다운로드한 CSV 파일을 업로드하면 현재 데이터와 병합할 수 있습니다.
+                    </div>
+                    <div class="controls">
+                        <input type="file" id="csvFile" accept=".csv" multiple style="margin-bottom: 10px;">
+                        <button class="btn" onclick="importCSV()">🔄 CSV 병합</button>
+                    </div>
+                    <div id="importStatus" class="status"></div>
+                    <div id="importPreview" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <!-- 저장된 데이터 탭 -->
+            <div id="saveddata" class="tab-content">
+                <div class="section">
+                    <div class="section-title">📋 현재 저장된 데이터</div>
+                    <div class="info-box">
+                        💡 지금까지 입력한 모든 설문 데이터가 표시됩니다.
+                    </div>
+                    <div id="savedDataContainer"></div>
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn" onclick="displaySavedData()">🔄 데이터 새로고침</button>
+                        <button class="btn" onclick="clearAllData()" style="background: #d62728;">🗑️ 모든 데이터 삭제</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 다운로드 탭 -->
+            <div id="download" class="tab-content">
+                <div class="section">
+                    <div class="section-title">💾 분석 결과 다운로드</div>
+                    <div class="info-box">
+                        📊 학교별로 분리된 데이터를 다운로드할 수 있습니다.
+                    </div>
+                    <button class="btn" onclick="downloadExcel()">📥 Excel로 다운로드</button>
+                    <button class="btn" onclick="downloadCSV()">📄 CSV로 다운로드</button>
+                    <button class="btn" onclick="downloadJSON()">📦 JSON으로 다운로드</button>
+                    <button class="btn btn-success" style="margin-left: 20px;" onclick="downloadDetailedExcel('all')">📋 상세데이터 (Excel)</button>
+                    <button class="btn btn-success" onclick="downloadDetailedCSV('all')">📋 상세데이터 (CSV)</button>
+                    <div id="downloadStatus" class="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 데이터 저장소
+        let allSurveyData = [];
+        let currentSurveyData = {
+            school: '',
+            class: '',
+            pretest: [],
+            posttest: []
+        };
+
+        // 차트 인스턴스 저장
+        let comparisonChartInstance = null;
+        let changeChartInstance = null;
+
+        // localStorage에서 데이터 복원
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('allSurveyData');
+            if (saved) {
+                try {
+                    allSurveyData = JSON.parse(saved);
+                    if (allSurveyData.length > 0) {
+                        currentSurveyData = allSurveyData[allSurveyData.length - 1];
+                        if (currentSurveyData.pretest.length > 0) {
+                            document.getElementById('postBtn').disabled = false;
+                        }
+                        if (currentSurveyData.posttest.length > 0) {
+                            document.getElementById('resultBtn').disabled = false;
+                            document.getElementById('graphBtn').disabled = false;
+                        }
+                        updateSchoolInfo();
+                    }
+                } catch (e) {
+                    console.error('데이터 로드 오류:', e);
+                }
+            }
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+
+            if (tabName === 'posttest') {
+                const postContainer = document.getElementById('postTableContainer');
+                if (postContainer && postContainer.innerHTML === '') {
+                    createPostTable();
+                }
+            }
+
+            if (tabName === 'saveddata') {
+                displaySavedData();
+            }
+
+            updateProgressBar();
+        }
+
+        function createPreTable() {
+            const schoolName = document.getElementById('schoolName').value.trim();
+            const classSelect = document.getElementById('classSelect').value;
+            const studentCount = parseInt(document.getElementById('studentCount').value);
+
+            if (!schoolName) {
+                showStatus('preStatus', '학교명을 입력해주세요', 'warning');
+                return;
+            }
+
+            if (!classSelect) {
+                showStatus('preStatus', '학급을 선택해주세요', 'warning');
+                return;
+            }
+
+            if (studentCount < 1 || studentCount > 50) {
+                showStatus('preStatus', '학생 수는 1~50 사이여야 합니다', 'warning');
+                return;
+            }
+
+            currentSurveyData = {
+                school: schoolName,
+                class: classSelect,
+                pretest: [],
+                posttest: []
+            };
+
+            let html = '<table><thead><tr><th>학생</th>';
+            for (let i = 1; i <= 12; i++) {
+                html += `<th>Q${i}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            for (let i = 0; i < studentCount; i++) {
+                html += `<tr><td>P${i + 1} <button class="btn-delete" onclick="deletePreRow(this)" style="padding: 4px 8px; font-size: 0.8em; background: #d62728; margin-left: 5px;">삭제</button></td>`;
+                for (let j = 1; j <= 12; j++) {
+                    html += `<td><input type="number" min="1" max="5" class="preQ${j}" placeholder="1-5"></td>`;
+                }
+                html += '</tr>';
+            }
+
+            html += '</tbody></table>';
+            document.getElementById('preTableContainer').innerHTML = html;
+            updateSchoolInfo();
+            showStatus('preStatus', `${schoolName} ${classSelect} - ${studentCount}명 입력 준비 완료`, 'success');
+        }
+
+        function savePretestData() {
+            const rows = document.querySelectorAll('#preTableContainer table tbody tr');
+            if (rows.length === 0) {
+                showStatus('preStatus', '입력할 데이터가 없습니다', 'warning');
+                return;
+            }
+
+            const newPretest = [];
+            const invalidStudents = [];
+
+            rows.forEach((row, i) => {
+                const scores = [];
+                let rowValid = true;
+
+                for (let j = 1; j <= 12; j++) {
+                    const input = row.querySelector(`.preQ${j}`);
+                    const value = parseInt(input.value);
+                    if (isNaN(value) || value < 1 || value > 5) {
+                        rowValid = false;
+                    } else {
+                        scores.push(value);
+                    }
+                }
+
+                if (rowValid) {
+                    newPretest.push({ student: `P${i + 1}`, scores: scores });
+                } else {
+                    invalidStudents.push(`P${i + 1}`);
+                }
+            });
+
+            if (invalidStudents.length > 0) {
+                showStatus('preStatus', `⚠️ ${invalidStudents.join(', ')} 학생의 점수를 모두 1~5 사이로 입력해주세요. 저장되지 않았습니다 (한 명이라도 틀리면 전체가 저장되지 않습니다).`, 'error');
+                return;
+            }
+
+            currentSurveyData.pretest = newPretest;
+
+            const existingIndex = allSurveyData.findIndex(d =>
+                d.school === currentSurveyData.school && d.class === currentSurveyData.class
+            );
+
+            if (existingIndex >= 0) {
+                allSurveyData[existingIndex] = currentSurveyData;
+            } else {
+                allSurveyData.push(currentSurveyData);
+            }
+
+            localStorage.setItem('allSurveyData', JSON.stringify(allSurveyData));
+            showStatus('preStatus', `✅ [${currentSurveyData.school} ${currentSurveyData.class}] 사전검사 저장됨! (${currentSurveyData.pretest.length}명)`, 'success');
+
+            document.getElementById('postBtn').disabled = false;
+            setTimeout(() => switchTab('posttest'), 800);
+        }
+
+        function deletePreRow(button) {
+            const row = button.closest('tr');
+            if (row) {
+                row.remove();
+                showStatus('preStatus', '선택한 학생 행이 삭제되었습니다', 'success');
+            }
+        }
+
+        function createPostTable() {
+            if (currentSurveyData.pretest.length === 0) {
+                showStatus('postStatus', '사전검사 데이터가 없습니다', 'error');
+                return;
+            }
+
+            let html = '<table><thead><tr><th>학생</th>';
+            for (let i = 1; i <= 12; i++) {
+                html += `<th>Q${i}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            currentSurveyData.pretest.forEach((student, idx) => {
+                html += `<tr><td>${student.student} <button class="btn-delete" onclick="deletePostRow(this)" style="padding: 4px 8px; font-size: 0.8em; background: #d62728; margin-left: 5px;">삭제</button></td>`;
+                for (let j = 1; j <= 12; j++) {
+                    html += `<td><input type="number" min="1" max="5" class="postQ${j}" placeholder="1-5"></td>`;
+                }
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('postTableContainer').innerHTML = html;
+        }
+
+        function deletePostRow(button) {
+            const row = button.closest('tr');
+            if (row) {
+                row.remove();
+                showStatus('postStatus', '선택한 학생 행이 삭제되었습니다 (사전검사 인원과 수가 달라지면 저장 시 경고가 표시됩니다)', 'success');
+            }
+        }
+
+        function clearPretestTable() {
+            if (confirm('사전검사 입력 데이터를 모두 초기화하시겠습니까?')) {
+                const table = document.querySelector('#preTableContainer table tbody');
+                if (table) {
+                    table.querySelectorAll('input').forEach(input => input.value = '');
+                    showStatus('preStatus', '✅ 사전검사 입력이 초기화되었습니다', 'success');
+                }
+            }
+        }
+
+        function clearPosttestTable() {
+            if (confirm('사후검사 입력 데이터를 모두 초기화하시겠습니까?')) {
+                const table = document.querySelector('#postTableContainer table tbody');
+                if (table) {
+                    table.querySelectorAll('input').forEach(input => input.value = '');
+                    showStatus('postStatus', '✅ 사후검사 입력이 초기화되었습니다', 'success');
+                }
+            }
+        }
+
+        function resetPretestInfo() {
+            if (confirm('학교명, 학급, 학생 수를 초기화하시겠습니까?')) {
+                document.getElementById('schoolName').value = '';
+                document.getElementById('classSelect').value = '';
+                document.getElementById('studentCount').value = '1';
+                document.getElementById('preTableContainer').innerHTML = '';
+                showStatus('preStatus', '✅ 정보가 초기화되었습니다. 다시 입력해주세요', 'success');
+            }
+        }
+
+        function validatePretestData() {
+            const table = document.querySelector('#preTableContainer table tbody');
+            if (!table) {
+                showStatus('preStatus', '⚠️ 테이블이 없습니다. 먼저 테이블을 생성해주세요', 'warning');
+                return;
+            }
+
+            const rows = table.querySelectorAll('tr');
+            let incompleteRows = [];
+            let completeRows = 0;
+
+            rows.forEach((row, idx) => {
+                let isComplete = true;
+                for (let j = 1; j <= 12; j++) {
+                    const input = row.querySelector(`.preQ${j}`);
+                    const value = parseInt(input.value);
+                    if (isNaN(value) || value < 1 || value > 5) {
+                        isComplete = false;
+                        input.style.backgroundColor = '#ffcccc';
+                    } else {
+                        input.style.backgroundColor = '#ccffcc';
+                    }
+                }
+                if (isComplete) completeRows++;
+                else incompleteRows.push(idx + 1);
+            });
+
+            if (incompleteRows.length === 0) {
+                showStatus('preStatus', `✅ 모든 데이터가 완벽합니다! (${completeRows}/${rows.length}명)`, 'success');
+            } else {
+                showStatus('preStatus', `⚠️ P${incompleteRows.join(', P')}번 학생의 데이터가 불완전합니다 (완료: ${completeRows}/${rows.length}명)`, 'warning');
+            }
+        }
+
+        function validatePosttestData() {
+            const table = document.querySelector('#postTableContainer table tbody');
+            if (!table) {
+                showStatus('postStatus', '⚠️ 테이블이 없습니다. 먼저 사전검사를 저장해주세요', 'warning');
+                return;
+            }
+
+            const rows = table.querySelectorAll('tr');
+            let incompleteRows = [];
+            let completeRows = 0;
+
+            rows.forEach((row, idx) => {
+                let isComplete = true;
+                for (let j = 1; j <= 12; j++) {
+                    const input = row.querySelector(`.postQ${j}`);
+                    const value = parseInt(input.value);
+                    if (isNaN(value) || value < 1 || value > 5) {
+                        isComplete = false;
+                        input.style.backgroundColor = '#ffcccc';
+                    } else {
+                        input.style.backgroundColor = '#ccffcc';
+                    }
+                }
+                if (isComplete) completeRows++;
+                else incompleteRows.push(idx + 1);
+            });
+
+            if (incompleteRows.length === 0) {
+                showStatus('postStatus', `✅ 모든 데이터가 완벽합니다! (${completeRows}/${rows.length}명)`, 'success');
+            } else {
+                showStatus('postStatus', `⚠️ P${incompleteRows.join(', P')}번 학생의 데이터가 불완전합니다 (완료: ${completeRows}/${rows.length}명)`, 'warning');
+            }
+        }
+
+        function savePosttestData() {
+            if (currentSurveyData.pretest.length === 0) {
+                showStatus('postStatus', '사전검사 데이터가 없습니다', 'error');
+                return;
+            }
+
+            const rows = document.querySelectorAll('#postTableContainer table tbody tr');
+            if (rows.length === 0) {
+                showStatus('postStatus', '입력할 데이터가 없습니다', 'warning');
+                return;
+            }
+
+            const newPosttest = [];
+            const invalidStudents = [];
+
+            rows.forEach((row, i) => {
+                const scores = [];
+                let rowValid = true;
+
+                for (let j = 1; j <= 12; j++) {
+                    const input = row.querySelector(`.postQ${j}`);
+                    const value = parseInt(input.value);
+                    if (isNaN(value) || value < 1 || value > 5) {
+                        rowValid = false;
+                    } else {
+                        scores.push(value);
+                    }
+                }
+
+                if (rowValid) {
+                    newPosttest.push({ student: `P${i + 1}`, scores: scores });
+                } else {
+                    invalidStudents.push(`P${i + 1}`);
+                }
+            });
+
+            if (invalidStudents.length > 0) {
+                showStatus('postStatus', `⚠️ ${invalidStudents.join(', ')} 학생의 점수를 모두 1~5 사이로 입력해주세요. 저장되지 않았습니다 (한 명이라도 틀리면 전체가 저장되지 않습니다).`, 'error');
+                return;
+            }
+
+            currentSurveyData.posttest = newPosttest;
+
+            if (currentSurveyData.posttest.length !== currentSurveyData.pretest.length) {
+                showStatus('postStatus', `⚠️ 주의: 사전 ${currentSurveyData.pretest.length}명, 사후 ${currentSurveyData.posttest.length}명`, 'warning');
+                return;
+            }
+
+            const existingIndex = allSurveyData.findIndex(d =>
+                d.school === currentSurveyData.school && d.class === currentSurveyData.class
+            );
+
+            if (existingIndex >= 0) {
+                allSurveyData[existingIndex] = currentSurveyData;
+            } else {
+                allSurveyData.push(currentSurveyData);
+            }
+
+            localStorage.setItem('allSurveyData', JSON.stringify(allSurveyData));
+            showStatus('postStatus', `✅ [${currentSurveyData.school} ${currentSurveyData.class}] 사후검사 저장됨!`, 'success');
+
+            performAnalysis();
+
+            document.getElementById('resultBtn').disabled = false;
+            document.getElementById('graphBtn').disabled = false;
+            setTimeout(() => switchTab('results'), 800);
+        }
+
+        function performAnalysis() {
+            let allPre = [];
+            let allPost = [];
+            let classSummary = [];
+
+            allSurveyData.forEach(data => {
+                if (data.pretest.length > 0 && data.posttest.length > 0) {
+                    const pre = data.pretest.map(s => s.scores.reduce((a,b) => a+b, 0) / 12);
+                    const post = data.posttest.map(s => s.scores.reduce((a,b) => a+b, 0) / 12);
+
+                    allPre = allPre.concat(pre);
+                    allPost = allPost.concat(post);
+
+                    const preMean = pre.reduce((a,b) => a+b, 0) / pre.length;
+                    const postMean = post.reduce((a,b) => a+b, 0) / post.length;
+                    const improved = post.filter((p, i) => p > pre[i]).length;
+
+                    classSummary.push({
+                        school: data.school,
+                        class: data.class,
+                        count: pre.length,
+                        preMean: preMean,
+                        postMean: postMean,
+                        change: postMean - preMean,
+                        improved: improved
+                    });
+                }
+            });
+
+            const pre = allPre;
+            const post = allPost;
+
+            if (pre.length === 0) {
+                document.getElementById('resultsContainer').innerHTML = '<p style="color: #999; text-align: center;">분석할 데이터가 없습니다</p>';
+                return;
+            }
+
+            const preMean = pre.reduce((a,b) => a+b, 0) / pre.length;
+            const postMean = post.reduce((a,b) => a+b, 0) / post.length;
+
+            const preStd = Math.sqrt(pre.reduce((sum, v) => sum + Math.pow(v - preMean, 2), 0) / pre.length);
+            const postStd = Math.sqrt(post.reduce((sum, v) => sum + Math.pow(v - postMean, 2), 0) / post.length);
+
+            const improved = post.filter((p, i) => p > pre[i]).length;
+
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">전체 사전 평균</div>
+                        <div style="font-size: 2em; font-weight: bold;">${preMean.toFixed(2)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">전체 사후 평균</div>
+                        <div style="font-size: 2em; font-weight: bold;">${postMean.toFixed(2)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">평균 변화도</div>
+                        <div style="font-size: 2em; font-weight: bold;">${(postMean - preMean).toFixed(2)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">전체 개선</div>
+                        <div style="font-size: 2em; font-weight: bold;">${improved}/${pre.length}</div>
+                    </div>
+                </div>
+
+                <div style="margin: 30px 0; border-top: 2px solid #eee;"></div>
+
+                <h3 style="margin: 20px 0 15px 0;">📚 학교별 요약</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>학교</th>
+                            <th>학급</th>
+                            <th>인원</th>
+                            <th>사전 평균</th>
+                            <th>사후 평균</th>
+                            <th>변화도</th>
+                            <th>개선 학생</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            classSummary.forEach(cs => {
+                html += `
+                    <tr>
+                        <td><strong>${cs.school}</strong></td>
+                        <td>${cs.class}</td>
+                        <td>${cs.count}명</td>
+                        <td>${cs.preMean.toFixed(2)}</td>
+                        <td>${cs.postMean.toFixed(2)}</td>
+                        <td>${cs.change.toFixed(2)}</td>
+                        <td>${cs.improved}/${cs.count}명</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('resultsContainer').innerHTML = html;
+
+            // 차트 그리기
+            drawCharts(pre, post, classSummary);
+
+            localStorage.setItem('allSurveyData', JSON.stringify(allSurveyData));
+        }
+
+        function drawCharts(pre, post, classSummary) {
+            const ctx1 = document.getElementById('comparisonChart');
+            const ctx2 = document.getElementById('changeChart');
+
+            if (comparisonChartInstance) comparisonChartInstance.destroy();
+            if (changeChartInstance) changeChartInstance.destroy();
+
+            const preMean = pre.reduce((a,b) => a+b, 0) / pre.length;
+            const postMean = post.reduce((a,b) => a+b, 0) / post.length;
+
+            comparisonChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['사전 평균', '사후 평균'],
+                    datasets: [{
+                        label: '평균 점수',
+                        data: [preMean, postMean],
+                        backgroundColor: ['#ff7f0e', '#2ca02c'],
+                        borderColor: ['#ff7f0e', '#2ca02c'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { max: 5 } }
+                }
+            });
+
+            changeChartInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: classSummary.map(cs => `${cs.school} ${cs.class}`),
+                    datasets: [{
+                        label: '반별 변화도',
+                        data: classSummary.map(cs => cs.change),
+                        backgroundColor: classSummary.map(cs => cs.change > 0 ? '#2ca02c' : '#d62728'),
+                        borderColor: classSummary.map(cs => cs.change > 0 ? '#2ca02c' : '#d62728'),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function displaySavedData() {
+            if (allSurveyData.length === 0) {
+                document.getElementById('savedDataContainer').innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">저장된 데이터가 없습니다</p>';
+                return;
+            }
+
+            let html = '';
+            allSurveyData.forEach((data, dataIndex) => {
+                if (data.pretest.length > 0 && data.posttest.length > 0) {
+                    html += `
+                        <div style="margin-bottom: 30px; padding: 15px; background: #f9f9f9; border-radius: 8px; border-left: 4px solid #1f77b4;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="margin-top: 0; color: #1f77b4; margin-bottom: 0;">
+                                    📚 <span class="school-badge">${data.school}</span> ${data.class}
+                                </h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn" onclick="downloadClassExcel(${dataIndex})" style="background: #4CAF50; padding: 8px 14px; font-size: 0.9em;">📊 Excel</button>
+                                    <button class="btn" onclick="downloadClassCSV(${dataIndex})" style="background: #2196F3; padding: 8px 14px; font-size: 0.9em;">📄 CSV</button>
+                                    <button class="btn" onclick="deleteClassData(${dataIndex})" style="background: #d62728; padding: 8px 14px;">🗑️ 삭제</button>
+                                </div>
+                            </div>
+                            <p style="margin: 5px 0; color: #666;"><strong>학생 수:</strong> ${data.pretest.length}명</p>
+                            <table style="width: 100%; margin-top: 10px; font-size: 0.85em;">
+                                <thead>
+                                    <tr style="background: #f0f0f0;">
+                                        <th style="border: 1px solid #ddd; padding: 8px;">학생</th>
+                    `;
+                    for (let q = 1; q <= 12; q++) {
+                        html += `<th style="border: 1px solid #ddd; padding: 8px; background: #e8f4f8;">Q${q}</th>`;
+                    }
+                    html += `<th style="border: 1px solid #ddd; padding: 8px; background: #ffe8e8;">평균</th>`;
+                    for (let q = 1; q <= 12; q++) {
+                        html += `<th style="border: 1px solid #ddd; padding: 8px; background: #e8f4f8;">Q${q}</th>`;
+                    }
+                    html += `<th style="border: 1px solid #ddd; padding: 8px; background: #e8ffe8;">평균</th></tr></thead><tbody>`;
+
+                    data.pretest.forEach((student, idx) => {
+                        const pre = student.scores;
+                        const post = data.posttest[idx].scores;
+                        const preMean = pre.reduce((a,b) => a+b, 0) / pre.length;
+                        const postMean = post.reduce((a,b) => a+b, 0) / post.length;
+
+                        html += `<tr><td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${student.student}</td>`;
+                        pre.forEach(score => html += `<td style="border: 1px solid #ddd; padding: 8px;">${score}</td>`);
+                        html += `<td style="border: 1px solid #ddd; padding: 8px; background: #f0f0f0; font-weight: bold;">${preMean.toFixed(2)}</td>`;
+                        post.forEach(score => html += `<td style="border: 1px solid #ddd; padding: 8px;">${score}</td>`);
+                        html += `<td style="border: 1px solid #ddd; padding: 8px; background: #f0f0f0; font-weight: bold;">${postMean.toFixed(2)}</td></tr>`;
+                    });
+                    html += `</tbody></table></div>`;
+                }
+            });
+
+            document.getElementById('savedDataContainer').innerHTML = html;
+        }
+
+        function downloadClassExcel(classIndex) {
+            if (classIndex >= allSurveyData.length) return;
+            const data = allSurveyData[classIndex];
+
+            const wb = XLSX.utils.book_new();
+            const detailData = [
+                ['학교', data.school],
+                ['학급', data.class],
+                ['']
+            ];
+            detailData.push(['학생', '사전평균', '사후평균', '변화도']);
+
+            data.pretest.forEach((student, i) => {
+                const pre = student.scores.reduce((a,b) => a+b, 0) / 12;
+                const post = data.posttest[i].scores.reduce((a,b) => a+b, 0) / 12;
+                detailData.push([student.student, pre.toFixed(2), post.toFixed(2), (post - pre).toFixed(2)]);
+            });
+
+            const sheet = XLSX.utils.aoa_to_sheet(detailData);
+            XLSX.utils.book_append_sheet(wb, sheet, `${data.school}_${data.class}`);
+            XLSX.writeFile(wb, `${data.school}_${data.class}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function downloadClassCSV(classIndex) {
+            if (classIndex >= allSurveyData.length) return;
+            const data = allSurveyData[classIndex];
+
+            let csv = `학교,${data.school}\n반,${data.class}\n\n학생,사전평균,사후평균,변화도\n`;
+
+            data.pretest.forEach((student, i) => {
+                const pre = student.scores.reduce((a,b) => a+b, 0) / 12;
+                const post = data.posttest[i].scores.reduce((a,b) => a+b, 0) / 12;
+                csv += `${student.student},${pre.toFixed(2)},${post.toFixed(2)},${(post - pre).toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${data.school}_${data.class}_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        function downloadExcel() {
+            if (allSurveyData.length === 0) {
+                showStatus('downloadStatus', '분석 데이터가 없습니다', 'error');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const summaryData = [['전체 분석 결과'], [''], ['학교', '학급', '인원', '사전평균', '사후평균', '변화도', '개선인원']];
+
+            allSurveyData.forEach(data => {
+                if (data.pretest.length > 0 && data.posttest.length > 0) {
+                    const pre = data.pretest.map(s => s.scores.reduce((a,b) => a+b, 0) / 12);
+                    const post = data.posttest.map(s => s.scores.reduce((a,b) => a+b, 0) / 12);
+                    const preMean = pre.reduce((a,b) => a+b, 0) / pre.length;
+                    const postMean = post.reduce((a,b) => a+b, 0) / post.length;
+                    const improved = post.filter((p, i) => p > pre[i]).length;
+                    summaryData.push([data.school, data.class, pre.length, preMean.toFixed(2), postMean.toFixed(2), (postMean - preMean).toFixed(2), improved]);
+                }
+            });
+
+            const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summarySheet, "전체요약");
+
+            allSurveyData.forEach(data => {
+                if (data.pretest.length > 0 && data.posttest.length > 0) {
+                    const detailData = [['학교', data.school], ['학급', data.class], ['']];
+                    detailData.push(['학생', '사전평균', '사후평균', '변화도']);
+
+                    data.pretest.forEach((student, i) => {
+                        const pre = student.scores.reduce((a,b) => a+b, 0) / 12;
+                        const post = data.posttest[i].scores.reduce((a,b) => a+b, 0) / 12;
+                        detailData.push([student.student, pre.toFixed(2), post.toFixed(2), (post - pre).toFixed(2)]);
+                    });
+
+                    const detailSheet = XLSX.utils.aoa_to_sheet(detailData);
+                    XLSX.utils.book_append_sheet(wb, detailSheet, `${data.school}_${data.class}`);
+                }
+            });
+
+            XLSX.writeFile(wb, `분석결과_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showStatus('downloadStatus', '✅ Excel 파일 다운로드 완료!', 'success');
+        }
+
+        function downloadCSV() {
+            if (allSurveyData.length === 0) {
+                showStatus('downloadStatus', '분석 데이터가 없습니다', 'error');
+                return;
+            }
+
+            let csv = '전체 분석 결과\n\n학교,학급,인원,사전평균,사후평균,변화도,개선인원\n';
+
+            allSurveyData.forEach(data => {
+                if (data.pretest.length > 0 && data.posttest.length > 0) {
+                    const pre = data.pretest.map(s => s.scores.reduce((a,b) => a+b, 0) / 12);
+                    const post = data.posttest.map(s => s.scores.reduce((a,b) => a+b, 0) / 12);
+                    const preMean = pre.reduce((a,b) => a+b, 0) / pre.length;
+                    const postMean = post.reduce((a,b) => a+b, 0) / post.length;
+                    const improved = post.filter((p, i) => p > pre[i]).length;
+                    csv += `${data.school},${data.class},${pre.length},${preMean.toFixed(2)},${postMean.toFixed(2)},${(postMean - preMean).toFixed(2)},${improved}\n`;
+                }
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `분석결과_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+
+            showStatus('downloadStatus', '✅ CSV 파일 다운로드 완료!', 'success');
+        }
+
+        function downloadJSON() {
+            if (allSurveyData.length === 0) {
+                showStatus('downloadStatus', '저장할 데이터가 없습니다', 'warning');
+                return;
+            }
+
+            const dataToDownload = {
+                version: '2.0',
+                timestamp: new Date().toISOString(),
+                totalSchools: new Set(allSurveyData.map(d => d.school)).size,
+                totalClasses: allSurveyData.length,
+                data: allSurveyData
+            };
+
+            const json = JSON.stringify(dataToDownload, null, 2);
+            const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `전체데이터_${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
+
+            showStatus('downloadStatus', '✅ JSON 파일 다운로드 완료!', 'success');
+        }
+
+        function downloadDetailedExcel(type) {
+            if (allSurveyData.length === 0) {
+                showStatus('downloadStatus', '저장된 데이터가 없습니다', 'error');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            allSurveyData.forEach(data => {
+                if (data.pretest.length > 0 && data.posttest.length > 0) {
+                    if (type === 'all' || type === 'pre') {
+                        const preData = [['학교', data.school], ['학급', data.class], ['']];
+                        preData.push(['학생']);
+                        for (let q = 1; q <= 12; q++) {
+                            preData[3].push(`Q${q}`);
+                        }
+                        preData[3].push('평균');
+
+                        data.pretest.forEach((student, i) => {
+                            const row = [student.student];
+                            student.scores.forEach(score => row.push(score));
+                            const avg = student.scores.reduce((a,b) => a+b, 0) / 12;
+                            row.push(avg.toFixed(2));
+                            preData.push(row);
+                        });
+
+                        const preSheet = XLSX.utils.aoa_to_sheet(preData);
+                        XLSX.utils.book_append_sheet(wb, preSheet, `${data.school}_${data.class}_사전`);
+                    }
+
+                    if (type === 'all' || type === 'post') {
+                        const postData = [['학교', data.school], ['학급', data.class], ['']];
+                        postData.push(['학생']);
+                        for (let q = 1; q <= 12; q++) {
+                            postData[3].push(`Q${q}`);
+                        }
+                        postData[3].push('평균');
+
+                        data.posttest.forEach((student, i) => {
+                            const row = [student.student];
+                            student.scores.forEach(score => row.push(score));
+                            const avg = student.scores.reduce((a,b) => a+b, 0) / 12;
+                            row.push(avg.toFixed(2));
+                            postData.push(row);
+                        });
+
+                        const postSheet = XLSX.utils.aoa_to_sheet(postData);
+                        XLSX.utils.book_append_sheet(wb, postSheet, `${data.school}_${data.class}_사후`);
+                    }
+                }
+            });
+
+            const typeLabel = type === 'all' ? '사전사후' : type === 'pre' ? '사전' : '사후';
+            XLSX.writeFile(wb, `상세데이터_${typeLabel}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showStatus('downloadStatus', `✅ ${typeLabel}검사 Excel 파일 다운로드 완료!`, 'success');
+        }
+
+        function downloadDetailedCSV(type) {
+            if (allSurveyData.length === 0) {
+                showStatus('downloadStatus', '저장된 데이터가 없습니다', 'error');
+                return;
+            }
+
+            let csv = '';
+
+            allSurveyData.forEach((data) => {
+                if (data.pretest.length > 0 && data.posttest.length > 0) {
+                    if (type === 'all' || type === 'pre') {
+                        if (type === 'pre') csv = '';
+                        csv += `학교,${data.school}\n반,${data.class}\n\n학생`;
+                        for (let q = 1; q <= 12; q++) {
+                            csv += `,Q${q}`;
+                        }
+                        csv += ',평균\n';
+
+                        data.pretest.forEach(student => {
+                            csv += student.student;
+                            student.scores.forEach(score => csv += `,${score}`);
+                            const avg = student.scores.reduce((a,b) => a+b, 0) / 12;
+                            csv += `,${avg.toFixed(2)}\n`;
+                        });
+                        csv += '\n';
+                    }
+
+                    if (type === 'all' || type === 'post') {
+                        if (type === 'post') csv = '';
+                        csv += `학교,${data.school}\n반,${data.class}\n\n학생`;
+                        for (let q = 1; q <= 12; q++) {
+                            csv += `,Q${q}`;
+                        }
+                        csv += ',평균\n';
+
+                        data.posttest.forEach(student => {
+                            csv += student.student;
+                            student.scores.forEach(score => csv += `,${score}`);
+                            const avg = student.scores.reduce((a,b) => a+b, 0) / 12;
+                            csv += `,${avg.toFixed(2)}\n`;
+                        });
+                        csv += '\n';
+                    }
+                }
+            });
+
+            const typeLabel = type === 'all' ? '사전사후' : type === 'pre' ? '사전' : '사후';
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `상세데이터_${typeLabel}_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+
+            showStatus('downloadStatus', `✅ ${typeLabel}검사 CSV 파일 다운로드 완료!`, 'success');
+        }
+
+        function importCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                showStatus('importStatus', 'CSV 파일을 선택해주세요', 'warning');
+                return;
+            }
+
+            let filesProcessed = 0;
+            let importedData = [];
+
+            Array.from(files).forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const csv = e.target.result;
+                        const lines = csv.trim().split('\n');
+
+                        let currentSchool = null;
+                        let currentClass = null;
+                        let classData = null;
+
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i].trim();
+
+                            if (!line) continue;
+
+                            const parts = line.split(',').map(p => p.trim());
+
+                            // 학교명 감지
+                            if (parts[0] === '학교' && parts.length > 1) {
+                                currentSchool = parts[1];
+                                continue;
+                            }
+
+                            // 학급 감지
+                            if (parts[0] === '학급' && parts.length > 1) {
+                                currentClass = parts[1];
+                                if (currentSchool && currentClass) {
+                                    classData = {
+                                        school: currentSchool,
+                                        class: currentClass,
+                                        pretest: [],
+                                        posttest: []
+                                    };
+                                }
+                                continue;
+                            }
+
+                            // 헤더 무시
+                            if (parts[0] === '학생' || line.includes('사전평균')) continue;
+
+                            // 학생 데이터 파싱
+                            if (currentSchool && currentClass && classData && parts[0] && parts[0].startsWith('P')) {
+                                const student = parts[0];
+                                const pre = parseFloat(parts[1]);
+                                const post = parseFloat(parts[2]);
+
+                                if (!isNaN(pre) && !isNaN(post) && pre >= 1 && pre <= 5 && post >= 1 && post <= 5) {
+                                    classData.pretest.push({
+                                        student: student,
+                                        scores: generateScoresFromAverage(pre)
+                                    });
+                                    classData.posttest.push({
+                                        student: student,
+                                        scores: generateScoresFromAverage(post)
+                                    });
+                                }
+                            }
+                        }
+
+                        if (classData && classData.pretest.length > 0) {
+                            importedData.push(classData);
+                        }
+
+                        filesProcessed++;
+
+                        if (filesProcessed === files.length) {
+                            importedData.forEach(importedClass => {
+                                const existingIndex = allSurveyData.findIndex(d =>
+                                    d.school === importedClass.school && d.class === importedClass.class
+                                );
+
+                                if (existingIndex >= 0) {
+                                    allSurveyData[existingIndex] = importedClass;
+                                } else {
+                                    allSurveyData.push(importedClass);
+                                }
+                            });
+
+                            let previewHTML = '<h3>📋 병합 미리보기</h3><table><thead><tr><th>학교</th><th>학급</th><th>인원</th><th>상태</th></tr></thead><tbody>';
+                            importedData.forEach(data => {
+                                previewHTML += `<tr><td><strong>${data.school}</strong></td><td>${data.class}</td><td>${data.pretest.length}명</td><td>✅ 로드됨</td></tr>`;
+                            });
+                            previewHTML += '</tbody></table>';
+
+                            localStorage.setItem('allSurveyData', JSON.stringify(allSurveyData));
+                            document.getElementById('importPreview').innerHTML = previewHTML;
+                            showStatus('importStatus', `✅ 완료! ${importedData.length}개 반이 로드되었습니다 (총 ${allSurveyData.length}반)`, 'success');
+
+                            if (allSurveyData.length > 0) {
+                                document.getElementById('resultBtn').disabled = false;
+                                document.getElementById('graphBtn').disabled = false;
+                                performAnalysis();
+                                setTimeout(() => switchTab('results'), 800);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('파일 처리 오류:', error);
+                        showStatus('importStatus', `❌ 파일 처리 오류: ${error.message}`, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        function generateScoresFromAverage(average) {
+            const scores = [];
+            const baseScore = Math.floor(average);
+            const decimal = average - baseScore;
+
+            for (let i = 0; i < 12; i++) {
+                scores.push(baseScore);
+            }
+
+            const increaseCount = Math.round(decimal * 12);
+            for (let i = 0; i < increaseCount; i++) {
+                if (scores[i] < 5) scores[i]++;
+            }
+
+            for (let i = scores.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [scores[i], scores[j]] = [scores[j], scores[i]];
+            }
+
+            return scores;
+        }
+
+        function deleteClassData(dataIndex) {
+            if (confirm(`정말로 [${allSurveyData[dataIndex].school} ${allSurveyData[dataIndex].class}]의 모든 데이터를 삭제하시겠습니까?`)) {
+                allSurveyData.splice(dataIndex, 1);
+                localStorage.setItem('allSurveyData', JSON.stringify(allSurveyData));
+                updateSchoolInfo();
+                displaySavedData();
+                showStatus('savedDataContainer', '✅ 해당 반의 데이터가 삭제되었습니다', 'success');
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('정말로 모든 설문 데이터를 삭제하시겠습니까? (이 작업은 되돌릴 수 없습니다)')) {
+                allSurveyData = [];
+                currentSurveyData = { school: '', class: '', pretest: [], posttest: [] };
+                localStorage.removeItem('allSurveyData');
+                document.getElementById('postBtn').disabled = true;
+                document.getElementById('resultBtn').disabled = true;
+                document.getElementById('graphBtn').disabled = true;
+                document.getElementById('preTableContainer').innerHTML = '';
+                document.getElementById('postTableContainer').innerHTML = '';
+                document.getElementById('resultsContainer').innerHTML = '';
+                document.getElementById('schoolName').value = '';
+                document.getElementById('classSelect').value = '';
+                updateSchoolInfo();
+                displaySavedData();
+                showStatus('preStatus', '✅ 모든 데이터가 삭제되었습니다', 'success');
+                switchTab('pretest');
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `status show ${type}`;
+        }
+
+        function updateProgressBar() {
+            let progress = 33;
+            if (currentSurveyData.pretest.length > 0) progress = 66;
+            if (currentSurveyData.posttest.length > 0) progress = 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function updateSchoolInfo() {
+            const schoolCount = new Set(allSurveyData.map(d => d.school)).size;
+            const classCount = allSurveyData.length;
+            let info = `총 ${schoolCount}개 학교 | 총 ${classCount}개 반`;
+            if (currentSurveyData.school) {
+                info += ` | 현재: [${currentSurveyData.school} ${currentSurveyData.class}]`;
+            }
+            document.getElementById('schoolInfo').textContent = info;
+        }
+    </script>
+</body>
+</html>
