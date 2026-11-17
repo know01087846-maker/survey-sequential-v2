@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>만족도 조사 결과 (관리자)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap wide">
+  <header class="head">
+    <p class="eyebrow">관리자 전용</p>
+    <h1>만족도 조사 결과</h1>
+  </header>
+
+  <section class="panel" id="loginPanel">
+    <form class="login" id="login">
+      <input type="password" id="pw" placeholder="관리자 비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" required>
+      <button class="btn primary" type="submit">확인</button>
+    </form>
+    <p class="error" id="loginError" role="alert" hidden></p>
+  </section>
+
+  <div id="result" hidden>
+    <div class="toolbar">
+      <span class="count" id="count"></span>
+      <button class="btn" id="reload" type="button">새로고침</button>
+      <button class="btn primary" id="csv" type="button">엑셀용 파일(CSV) 내려받기</button>
+    </div>
+    <section class="panel">
+      <h2>문항별 집계</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+    <section class="panel">
+      <h2>응답 목록</h2>
+      <div class="tablewrap"><table class="responses" id="table"></table></div>
+    </section>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; };
+let password = '';
+let rows = [];
+
+const scale = (set, v) => v ? `${v}. ${set[v - 1]}` : '';
+// 표·CSV 공통 열 정의: [제목, 값 꺼내는 함수, 긴 글 여부]
+const COLUMNS = [
+  ['번호', r => r.id],
+  ['제출일시', r => new Date(r.created_at).toLocaleString('ko-KR')],
+  ['1. 전반적 만족', r => scale(SCALE_SAT, r.answers.q1)],
+  ...SUPPORT_ROWS.map(([k, letter, name]) => [`2-${letter}. ${name}`, r => scale(SCALE_SAT2, (r.answers.q2 || {})[k])]),
+  ['2-1. 불만족 사유', r => r.answers.q2_1 || '', true],
+  ['3. 처리절차', r => scale(SCALE_SAT, r.answers.q3)],
+  ['4. 도움 정도', r => scale(SCALE_POS, r.answers.q4)],
+  ['5. 상담 도움', r => r.answers.q5 || ''],
+  ['6. 추천 의향', r => r.answers.q6 || ''],
+  ['7. 건의사항', r => r.answers.q7 || '', true],
+  ['성별', r => r.answers.gender || ''],
+  ['연령', r => r.answers.age || ''],
+  ['어려움 유형', r => (r.answers.difficulty || []).join(' / '), true],
+  ['어려움 유형(직접 기재)', r => r.answers.difficulty_text || '', true],
+  ['알게 된 계기', r => r.answers.how_known || '', true],
+  ['지원 항목', r => (r.answers.support_items || []).join(', '), true],
+  ['신청서 작성한 곳', r => [r.answers.written_at, r.answers.written_at_text].filter(Boolean).join(': ')],
+];
+
+function tally(title, labels, pick) {
+  const counts = labels.map(() => 0);
+  rows.forEach(r => [].concat(pick(r) ?? []).forEach(v => { const i = typeof v === 'number' ? v - 1 : labels.indexOf(v); if (i >= 0) counts[i]++; }));
+  const max = Math.max(1, ...counts);
+  const box = el('div', null, 'stat');
+  box.append(el('h3', title));
+  labels.forEach((label, i) => {
+    const bar = el('div', null, 'bar');
+    const track = el('div', null, 'track');
+    const fill = el('div', null, 'fill');
+    fill.style.width = `${counts[i] / max * 100}%`;
+    track.append(fill);
+    bar.append(el('span', label), track, el('span', counts[i], 'n'));
+    box.append(bar);
+  });
+  return box;
+}
+
+function render() {
+  $('#count').textContent = `응답 ${rows.length}건`;
+  const stats = $('#stats');
+  stats.replaceChildren(
+    tally('1. 전반적 만족', SCALE_SAT, r => r.answers.q1),
+    ...SUPPORT_ROWS.map(([k, letter, name]) => tally(`2-${letter}. ${name}`, SCALE_SAT2, r => (r.answers.q2 || {})[k])),
+    tally('3. 처리절차 만족', SCALE_SAT, r => r.answers.q3),
+    tally('4. 생활 안정·학업·진로에 도움', SCALE_POS, r => r.answers.q4),
+    tally('5. 초기상담·사례관리 도움', YES_NO, r => r.answers.q5),
+    tally('6. 지인 추천 의향', YES_NO, r => r.answers.q6),
+    tally('성별', GENDER, r => r.answers.gender),
+    tally('연령', AGE, r => r.answers.age),
+    tally('어려움 유형', DIFFICULTY.flatMap(([g, subs]) => subs.length ? subs.map(s => `${g} > ${s}`) : [g]), r => r.answers.difficulty),
+    tally('사업 알게 된 계기', HOW_KNOWN, r => r.answers.how_known),
+    tally('지원 항목 (중복)', SUPPORT_ITEMS, r => r.answers.support_items),
+    tally('신청서 작성한 곳', WRITTEN_AT, r => r.answers.written_at),
+  );
+
+  const table = $('#table');
+  const thead = el('thead'); const hr = el('tr');
+  COLUMNS.forEach(([title]) => hr.append(el('th', title)));
+  hr.append(el('th', '삭제'));
+  thead.append(hr);
+  const tbody = el('tbody');
+  rows.forEach(r => {
+    const tr = el('tr');
+    COLUMNS.forEach(([, get, long]) => tr.append(el('td', get(r), long ? 'long' : '')));
+    const td = el('td'); const btn = el('button', '삭제', 'del');
+    btn.type = 'button';
+    btn.addEventListener('click', async () => {
+      if (!confirm(`${r.id}번 응답을 삭제할까요? 삭제하면 되돌릴 수 없습니다.`)) return;
+      try { await surveyRpc('admin_delete_survey', { p_password: password, p_id: r.id }); await load(); }
+      catch (e) { alert('삭제하지 못했습니다: ' + e.message); }
+    });
+    td.append(btn); tr.append(td); tbody.append(tr);
+  });
+  if (!rows.length) { const tr = el('tr'); const td = el('td', '아직 제출된 응답이 없습니다.'); td.colSpan = COLUMNS.length + 1; tr.append(td); tbody.append(tr); }
+  table.replaceChildren(thead, tbody);
+}
+
+async function load() {
+  rows = await surveyRpc('admin_list_survey', { p_password: password });
+  render();
+}
+
+$('#login').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = $('#loginError');
+  err.hidden = true;
+  password = $('#pw').value;
+  try {
+    await load();
+    $('#loginPanel').hidden = true;
+    $('#result').hidden = false;
+  } catch (ex) {
+    err.textContent = /unauthorized/.test(ex.message) ? '비밀번호가 맞지 않습니다.'
+      : ex.status === 404 ? '저장소가 아직 준비되지 않았습니다. supabase_survey.sql을 먼저 실행해 주세요.'
+      : '불러오지 못했습니다: ' + ex.message;
+    err.hidden = false;
+  }
+});
+
+$('#reload').addEventListener('click', () => load().catch(e => alert('불러오지 못했습니다: ' + e.message)));
+
+$('#csv').addEventListener('click', () => {
+  const cell = v => { let s = String(v ?? ''); if (/^[=+\-@]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
+  const lines = [COLUMNS.map(c => cell(c[0])).join(',')];
+  [...rows].reverse().forEach(r => lines.push(COLUMNS.map(c => cell(c[1](r))).join(',')));
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `만족도조사_응답_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+</script>
+</body>
+</html>
