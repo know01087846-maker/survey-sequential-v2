@@ -1,7 +1,7 @@
-// 응답이 저장되는 Supabase 프로젝트 (왓슈와 같은 프로젝트를 사용).
+// 응답이 저장되는 Supabase 프로젝트 (설문 전용 프로젝트).
 // 다른 프로젝트에 저장하려면 이 두 값만 바꾸면 됩니다.
-const SURVEY_DB_URL = 'https://izpchwapocujcxpeqdot.supabase.co';
-const SURVEY_DB_KEY = 'sb_publishable_f-9Vx_Vdf7bmeF2LI5HsdA_caczwvz3';
+const SURVEY_DB_URL = 'https://ppglntvjjylzcomdbjfm.supabase.co';
+const SURVEY_DB_KEY = 'sb_publishable__QC2SHVHl9cfKInH9LK4_Q_g0eFwGyx';
 
 async function surveyRpc(fn, params) {
   const res = await fetch(`${SURVEY_DB_URL}/rest/v1/rpc/${fn}`, {
